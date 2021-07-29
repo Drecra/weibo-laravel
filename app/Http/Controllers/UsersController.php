@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class UsersController extends Controller
 {
@@ -32,9 +33,12 @@ class UsersController extends Controller
             'password' => bcrypt($request->password),
         ]);
 
-        Auth::login($user);
-        session()->flash('success', '恭喜您注册成功！您将在这里开启一段新旅途~');
-        return redirect()->route('users.show', [$user]);
+        // Auth::login($user);
+        // session()->flash('success', '恭喜您注册成功！您将在这里开启一段新旅途~');
+        // return redirect()->route('users.show', [$user]);
+        $this->sendEmailConfirmationTo($user);
+        session()->flash('success', '验证邮件已经发送到您的注册邮箱上，请注意查收！');
+        return redirect('/');
     }
 
     public function edit(User $user)
@@ -63,20 +67,48 @@ class UsersController extends Controller
     public function index()
     {
         $users = User::paginate(6);
-        return view('users.index',compact('users'));
+        return view('users.index', compact('users'));
     }
 
     public function destroy(User $user)
     {
-        $this->authorize('destroy',$user);
+        $this->authorize('destroy', $user);
         $user->delete();
-        session()->flash('success','成功删除用户');
+        session()->flash('success', '成功删除用户');
         return back();
     }
 
     public function __construct()
     {
-        $this->middleware('auth',['except'=> ['show','create','store','index']
+        $this->middleware('auth', [
+            'except' => ['show', 'create', 'store', 'index','confirmEmail']
         ]);
+    }
+
+    public function sendEmailConfirmationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'drecra_admin@outlook.com';
+        $name = 'Drecra';
+        $to = $user->email;
+        $subject = "感谢注册 Wei bo 应用！请确定您的邮箱。";
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
+    }
+
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token',$token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        Auth::login($user);
+        session()->flash('success','恭喜你，激活成功！');
+        return redirect()->route('users.show',[$user]);
     }
 }
