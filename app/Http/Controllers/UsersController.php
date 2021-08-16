@@ -14,10 +14,6 @@ class UsersController extends Controller
         return view('users.create');
     }
 
-    public function show(User $user)
-    {
-        return view('users.show', compact('user'));
-    }
 
     public function store(Request $request)
     {
@@ -81,13 +77,12 @@ class UsersController extends Controller
     public function __construct()
     {
         $this->middleware('auth', [
-            'except' => ['show', 'create', 'store', 'index','confirmEmail']
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
         ]);
 
-        $this->middleware('throttle:10,60',[
+        $this->middleware('throttle:10,60', [
             'only' => ['store']
         ]);
-
     }
 
     public function sendEmailConfirmationTo($user)
@@ -104,14 +99,20 @@ class UsersController extends Controller
 
     public function confirmEmail($token)
     {
-        $user = User::where('activation_token',$token)->firstOrFail();
+        $user = User::where('activation_token', $token)->firstOrFail();
 
         $user->activated = true;
         $user->activation_token = null;
         $user->save();
 
         Auth::login($user);
-        session()->flash('success','恭喜你，激活成功！');
-        return redirect()->route('users.show',[$user]);
+        session()->flash('success', '恭喜你，激活成功！');
+        return redirect()->route('users.show', [$user]);
+    }
+
+    public function show(User $user)
+    {
+        $statuses = $user->statuses()->orderBy('created_at', 'desc')->paginate(30);
+        return view('users.show',compact('user','statuses'));
     }
 }
