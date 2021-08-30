@@ -35,7 +35,7 @@ class User extends Authenticatable
         $this->followings()->sync($user_ids, false);
     }
 
-    public function unfollow()
+    public function unfollow($user_ids)
     {
         if (!is_array($user_ids)) {
             $user_ids = compact('user_ids');
@@ -47,6 +47,7 @@ class User extends Authenticatable
     {
         return $this->followings->contains($user_id);
     }
+
     /**
      * The attributes that are mass assignable.
      *
