@@ -33,3 +33,6 @@ Route::get('password/reset/{token}','PasswordController@showResetForm')->name('p
 Route::post('password/reset','PasswordController@reset')->name('password.update');                  //对提交过来的 token 和 email 数据进行配对，正确的话更新密码
 
 Route::resource('statuses','StatusesController',['only'=>['store','destroy']]);
+
+Route::get('/users/{user}/followings','UsersController@followings')->name('users.followings');
+Route::get('users/{user}/followers','UsersController@followers')->name('users.followers');
